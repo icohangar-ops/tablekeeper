@@ -102,9 +102,19 @@ CREATE INDEX IF NOT EXISTS idx_audit_ref ON audit_events (ref_id);
 -- partial predicate, freeing the slot the instant they go terminal.
 -- ═══════════════════════════════════════════════════════════════════════════
 
-ALTER TABLE reservations DROP CONSTRAINT IF EXISTS reservation_no_overlap;
-ALTER TABLE reservations ADD CONSTRAINT reservation_no_overlap
-EXCLUDE USING gist (
-  table_id WITH =,
-  tstzrange(starts_at, ends_at, '[)') WITH &&
-) WHERE (status IN ('held','confirmed'));
+-- The constraint add is guarded so repeated boots (serverless cold starts,
+-- CLI re-runs) don't drop/re-add it every time — a no-op when present.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'reservation_no_overlap'
+      AND conrelid = 'reservations'::regclass
+  ) THEN
+    ALTER TABLE reservations ADD CONSTRAINT reservation_no_overlap
+    EXCLUDE USING gist (
+      table_id WITH =,
+      tstzrange(starts_at, ends_at, '[)') WITH &&
+    ) WHERE (status IN ('held','confirmed'));
+  END IF;
+END $$;

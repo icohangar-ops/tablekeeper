@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PgClient } from "./pg";
 import { PgLiteClient } from "./pglite";
-import type { SqlClient } from "./sql";
+import type { Executor, SqlClient } from "./sql";
 
 const globalStore = globalThis as unknown as { __tablekeeperDb?: SqlClient };
 
@@ -30,9 +30,20 @@ export function schemaSql(): string {
   return readFileSync(join(process.cwd(), "db", "schema.sql"), "utf8");
 }
 
-/** Idempotent: applies db/schema.sql (CREATE IF NOT EXISTS + constraint swap). */
+/** Applies db/schema.sql verbatim. Guarded/idempotent; safe to re-run. */
+export async function applySchema(exec: Executor): Promise<void> {
+  // The whole file must land as ONE atomic unit (schema + invariant constraint
+  // appear together). Use the backend's multi-statement path when available.
+  if (typeof exec.exec === "function") {
+    await exec.exec(schemaSql());
+  } else {
+    await exec.query(schemaSql());
+  }
+}
+
+/** Back-compat wrapper: apply schema on a client (no boot lock). */
 export async function migrate(db: SqlClient): Promise<void> {
-  await db.exec(schemaSql());
+  await applySchema(db);
 }
 
 /** Drop everything, then re-apply the schema. Dev/test convenience only. */
@@ -49,10 +60,11 @@ export async function migrateReset(db: SqlClient): Promise<void> {
 }
 
 /**
- * Boot sequence, idempotent per process: migrate + seed-if-empty. Required
- * for the embedded engine (each process owns its database) and equally safe
- * against production Postgres (migrations are idempotent; seeding is skipped
- * when restaurants exist). Every entry point awaits this once.
+ * Boot sequence, serialized across ALL processes/instances: a transactional
+ * Postgres advisory lock (works identically on PGlite and real Postgres)
+ * guarantees only one cold boot applies schema + seed at a time, so serverless
+ * instances racing on first request cannot collide. Idempotent per process via
+ * the global promise memo. Every entry point awaits this once.
  */
 export function ensureReady(): Promise<SqlClient> {
   const store = globalThis as unknown as {
@@ -61,9 +73,12 @@ export function ensureReady(): Promise<SqlClient> {
   if (!store.__tablekeeperReady) {
     store.__tablekeeperReady = (async () => {
       const db = getDb();
-      await migrate(db);
-      const { seedIfEmpty } = await import("./seed-data");
-      await seedIfEmpty(db);
+      await db.transaction(async (tx) => {
+        await tx.query("SELECT pg_advisory_xact_lock(hashtext('tablekeeper:boot'))");
+        await applySchema(tx);
+        const { seedIfEmpty } = await import("./seed-data");
+        await seedIfEmpty(tx);
+      });
       return db;
     })();
   }

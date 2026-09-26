@@ -20,6 +20,11 @@ export interface QueryResult<T> {
 /** A transaction-scoped (or otherwise single-connection) executor. */
 export interface Executor {
   query<T = Row>(sql: string, params?: unknown[]): Promise<QueryResult<T>>;
+  /**
+   * Raw multi-statement execution (simple protocol), when the backend
+   * supports it inside this executor's transaction. Migrations use this.
+   */
+  exec?(sql: string): Promise<void>;
 }
 
 export interface SqlClient extends Executor {

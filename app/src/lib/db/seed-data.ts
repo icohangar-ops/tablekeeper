@@ -2,7 +2,7 @@
 // including America/New_York deliberately (DST-relevant: fall-back Nov 1, 2026).
 // Service periods are materialized per date via periodUtcWindow, so DST is
 // baked into every row.
-import type { SqlClient } from "@/lib/db/sql";
+import type { Executor } from "@/lib/db/sql";
 import { periodUtcWindow } from "@/lib/time/slots";
 import { addDays, dateLocalOf } from "@/lib/time/tz";
 
@@ -126,7 +126,7 @@ export function seedDatesFor(tz: string, now: Date): string[] {
   return dates;
 }
 
-export async function seedIfEmpty(db: SqlClient, now: Date = new Date()): Promise<void> {
+export async function seedIfEmpty(db: Executor, now: Date = new Date()): Promise<void> {
   const existing = await db.query<{ n: number }>(
     `SELECT COUNT(*)::int AS n FROM restaurants`
   );

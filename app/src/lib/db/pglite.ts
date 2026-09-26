@@ -18,7 +18,13 @@ export class PgLiteClient implements SqlClient {
   }
 
   async query<T = Row>(sql: string, params: unknown[] = []): Promise<QueryResult<T>> {
-    const res = await this.db.query<T>(sql, params as never[]);
+    // No params → simple query protocol (multi-statement SQL allowed).
+    // An empty-but-present array would force the prepared/extended protocol,
+    // which rejects multi-statement strings (migrations).
+    const res =
+      params.length === 0
+        ? await this.db.query<T>(sql)
+        : await this.db.query<T>(sql, params as never[]);
     return { rows: res.rows };
   }
 
@@ -30,8 +36,14 @@ export class PgLiteClient implements SqlClient {
     return this.db.transaction(async (tx) => {
       const executor: Executor = {
         async query<Q = Row>(sql: string, params: unknown[] = []): Promise<QueryResult<Q>> {
-          const res = await tx.query<Q>(sql, params as never[]);
+          const res =
+            params.length === 0
+              ? await tx.query<Q>(sql)
+              : await tx.query<Q>(sql, params as never[]);
           return { rows: res.rows };
+        },
+        async exec(sql: string): Promise<void> {
+          await tx.exec(sql); // multi-statement capable
         },
       };
       return fn(executor);

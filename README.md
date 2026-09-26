@@ -32,7 +32,8 @@ EXCLUDE USING gist (
 - Build plan: [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md)
 - Invariants: [`docs/BUILD_PLAN.md` §3](docs/BUILD_PLAN.md)
 - Time-zone decision: [`app/docs/TZ_DECISION.md`](app/docs/TZ_DECISION.md)
-- Evidence / case study: `docs/EVIDENCE.md` (wip)
+- Evidence pack: [`docs/EVIDENCE.md`](docs/EVIDENCE.md)
+- Deploy runbook (Neon + Vercel): [`DEPLOY.md`](DEPLOY.md)
 
 ## Status
 

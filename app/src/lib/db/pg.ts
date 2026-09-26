@@ -15,7 +15,11 @@ export class PgClient implements SqlClient {
   }
 
   async query<T = Row>(sql: string, params: unknown[] = []): Promise<QueryResult<T>> {
-    const res = await this.pool.query(sql, params as never[]);
+    // No params → simple query protocol (multi-statement SQL allowed).
+    const res =
+      params.length === 0
+        ? await this.pool.query(sql)
+        : await this.pool.query(sql, params as never[]);
     return { rows: res.rows as T[] };
   }
 
@@ -29,8 +33,15 @@ export class PgClient implements SqlClient {
       await client.query("BEGIN");
       const executor: Executor = {
         async query<Q = Row>(sql: string, params: unknown[] = []): Promise<QueryResult<Q>> {
-          const res = await client.query(sql, params as never[]);
+          const res =
+            params.length === 0
+              ? await client.query(sql)
+              : await client.query(sql, params as never[]);
           return { rows: res.rows as Q[] };
+        },
+        async exec(sql: string): Promise<void> {
+          // No params → simple protocol → multi-statement is allowed.
+          await client.query(sql);
         },
       };
       const out = await fn(executor);
