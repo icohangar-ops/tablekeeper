@@ -48,7 +48,7 @@ runs:
     - id: scan
       shell: bash
       run: |
-        node "${{ github.action_path }}/dist/cli.mjs" \
+        node "${{ github.action_path }}/action/dist/cli.mjs" \
           --path "${GITHUB_WORKSPACE:-$PWD}" \
           --format both \
           --threshold "${{ inputs.threshold }}" \
