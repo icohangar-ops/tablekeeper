@@ -1,5 +1,10 @@
 # Deploy runbook — production in ~10 minutes
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ficohangar-ops%2Ftablekeeper&root-directory=app&project-name=tablekeeper)
+
+The button pre-selects `app/` as the Root Directory — you only paste a Neon
+pooled URL as `DATABASE_URL`. The manual path below is equivalent.
+
 The app is deploy-ready: set one env var (`DATABASE_URL`) and ship it. No
 DATABASE_URL? It still runs — on an embedded Postgres 17 (PGlite/WASM) with
 the identical schema and invariant — but on serverless every instance gets a

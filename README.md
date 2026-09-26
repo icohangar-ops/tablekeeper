@@ -10,6 +10,14 @@ results. The "check its own results" part is real infrastructure:
 [ShipScore](../tools/shipscore) scores every PR across Design, Ship, Run,
 Secure, Test and blocks the merge below threshold.
 
+## One-click deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ficohangar-ops%2Ftablekeeper&root-directory=app&project-name=tablekeeper)
+
+Click, paste a Neon **pooled** connection string as `DATABASE_URL`, deploy.
+Schema + seed apply themselves behind a Postgres advisory lock on first boot —
+no migration step. Full runbook: [`DEPLOY.md`](DEPLOY.md).
+
 ## The hard part
 
 > A table must never be double-booked.
@@ -44,7 +52,9 @@ EXCLUDE USING gist (
 | W3 | Booking core (hold/confirm/cancel, idempotency, 23P01→409) | ✅ done |
 | W4 | Invariant proof T1–T11 | ✅ green locally (PGlite) · CI proof on push |
 | W5 | Frontend: venue booking flow, /lookup, /kill-demo (50-racer UI) | ✅ done — lint/tsc/tests/build green |
-| W6–W8 | Deploy, evidence pack, red-team | ⏳ per plan |
+| W6 | Deploy (Neon + Vercel) | 🚀 one-click button above — paste pooled URL, ship |
+| W7 | Evidence pack | ✅ [`docs/EVIDENCE.md`](docs/EVIDENCE.md) |
+| W8 | Red-team pass (9 live HTTP probes) | ✅ 9/9 pre-deploy — "RED TEAM FAILED TO BREAK IT" |
 
 ## Quickstart
 

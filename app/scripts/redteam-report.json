@@ -1,0 +1,115 @@
+{
+  "base": "http://localhost:3100",
+  "startedAt": "2026-09-26T22:15:41.068Z",
+  "passed": 9,
+  "total": 9,
+  "verdict": "RED TEAM FAILED TO BREAK IT",
+  "probes": [
+    {
+      "id": "RT1",
+      "label": "50-way booking race, distinct keys",
+      "pass": true,
+      "detail": "1×201 (unique ids: 1) · 49×409 SLOT_TAKEN · 0×other"
+    },
+    {
+      "id": "RT2",
+      "label": "12-way stampede, same idempotency key",
+      "pass": true,
+      "detail": "12×201 · unique reservation ids: 1 (I4 replay under stampede)"
+    },
+    {
+      "id": "RT3",
+      "label": "same key, different payload",
+      "pass": true,
+      "detail": "422 DUPLICATE_IDEMPOTENCY_PAYLOAD (reused RT2's recorded key)"
+    },
+    {
+      "id": "RT4a",
+      "label": "double confirm is idempotent",
+      "pass": true,
+      "detail": "200 + 200, confirmCode identical: true"
+    },
+    {
+      "id": "RT4b",
+      "label": "confirm after terminal cancel",
+      "pass": true,
+      "detail": "confirm-after-cancel → 409 INVALID_TRANSITION"
+    },
+    {
+      "id": "RT5",
+      "label": "confirm-vs-cancel race",
+      "pass": true,
+      "detail": "confirm=200 cancel=200 → final=cancelled (exactly one terminal state wins the race)"
+    },
+    {
+      "id": "RT6",
+      "label": "adjacency (end==start) vs 45-min overlap",
+      "pass": true,
+      "detail": "adjacent 201/201 (A.endsAt === B.startsAt: true) · overlap 409 SLOT_TAKEN"
+    },
+    {
+      "id": "RT7",
+      "label": "fuzz battery — 10 invalid clients",
+      "pass": true,
+      "detail": "10/10 answered 4xx — zero 5xx (400,400,400,400,400,422,404,400,400,422)",
+      "cases": [
+        {
+          "label": "party 0",
+          "status": 400,
+          "code": "VALIDATION_FAILED"
+        },
+        {
+          "label": "party -3",
+          "status": 400,
+          "code": "VALIDATION_FAILED"
+        },
+        {
+          "label": "party 99",
+          "status": 400,
+          "code": "VALIDATION_FAILED"
+        },
+        {
+          "label": "party \"two\"",
+          "status": 400,
+          "code": "VALIDATION_FAILED"
+        },
+        {
+          "label": "garbage date",
+          "status": 400,
+          "code": "VALIDATION_FAILED"
+        },
+        {
+          "label": "past date",
+          "status": 422,
+          "code": "OUTSIDE_SERVICE_HOURS"
+        },
+        {
+          "label": "unknown restaurant",
+          "status": 404,
+          "code": "NOT_FOUND"
+        },
+        {
+          "label": "missing guest",
+          "status": 400,
+          "code": "VALIDATION_FAILED"
+        },
+        {
+          "label": "malformed JSON",
+          "status": 400,
+          "code": "VALIDATION_FAILED"
+        },
+        {
+          "label": "3 am slot",
+          "status": 422,
+          "code": "OUTSIDE_SERVICE_HOURS"
+        }
+      ]
+    },
+    {
+      "id": "RT8",
+      "label": "health invariant self-check + audit feed",
+      "pass": true,
+      "detail": "health 200 constraintPresent=true · audit 200 count=12"
+    }
+  ]
+}

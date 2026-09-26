@@ -7,3 +7,4 @@ out/
 .env
 .env.local
 npm-debug.log*
+start.log

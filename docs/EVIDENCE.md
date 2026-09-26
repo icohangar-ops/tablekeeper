@@ -75,7 +75,44 @@ demo can be repeated endlessly on camera.
   (`55c3f9e`) is itself part of the record — the gate earning its keep on day
   one is the best evidence it gates anything.
 
-## 6 · Reproduce everything
+## 6 · Red-team pass (W8, pre-deploy)
+
+`app/scripts/redteam.mjs` — 9 adversarial probes over the live HTTP surface of
+a fresh production build (no test fixtures, no in-process shortcuts; real
+fetches against `next start`). Report artifact: `app/scripts/redteam-report.json`.
+
+| Probe | Attack | Result |
+|---|---|---|
+| RT1 | 50 concurrent bookers, distinct keys, one table | 1×201 + 49×409 SLOT_TAKEN |
+| RT2 | 12-way stampede, SAME idempotency key + payload | 12×201, one reservation id (I4 holds under a stampede) |
+| RT3 | same key, different payload | 422 DUPLICATE_IDEMPOTENCY_PAYLOAD |
+| RT4a | double confirm | 200 + 200, identical confirm code (idempotent) |
+| RT4b | confirm after terminal cancel | 409 INVALID_TRANSITION |
+| RT5 | confirm-vs-cancel race | one coherent terminal state, no 5xx |
+| RT6 | back-to-back seatings (end == start) vs 30-min overlap | adjacency 201/201, overlap 409 |
+| RT7 | fuzz battery: party 0/-3/99/"two", garbage date, past date, unknown restaurant, missing guest, malformed JSON, 3 am slot | 10/10 answered 4xx — zero 5xx |
+| RT8 | health self-check + audit feed | constraintPresent=true, audit events logged |
+
+**Verdict: RED TEAM FAILED TO BREAK IT (9/9).**
+
+Honesty note: the first draft of RT6 "failed" — adjacent bookings appeared to
+be rejected. Investigation (audit-trail replay) showed the probes assumed
+60-minute slots, while `DEFAULT_DURATION_MIN = 90`: the "adjacent" slots
+actually overlapped by 30 minutes, so 409 was the *correct* answer and the
+invariant layer was more precise than the red team. With 90-minute-aware
+placement, true adjacency (end == start) is accepted — back-to-back seatings
+work, which is exactly the `[)` range semantics the DB constraint encodes.
+
+Rebuild note: the suite was re-provisioned from its spec (sandbox reset wiped
+the local copy) and the re-run reproduced the same class of lesson — the first
+re-run scored 7/9, and both "failures" (RT3, RT4b) were probe bugs again: the
+probes were booking over each other on the one-table arena (RT3 used a fresh
+key on a slot RT2 had just taken; RT4b requested a slot RT4a had already
+confirmed). The product answered 409/404 *correctly* in both cases. The suite
+now walks the live availability feed and reserves non-overlapping windows per
+probe (RT3 reuses RT2's recorded idempotency key); clean run: 9/9.
+
+## 7 · Reproduce everything
 
 ```bash
 cd app
@@ -83,6 +120,7 @@ npm install
 npm run test:all        # 28/28 — unit + T1–T11 adversarial + soak
 npm run dev             # http://localhost:3100
 npm run attack          # scripted kill-demo against the running server
+TK_BASE_URL=http://localhost:3100 npm run redteam   # 9-probe red-team pass
 curl localhost:3100/api/health   # invariant self-check
 curl localhost:3100/api/audit?limit=20   # append-only evidence feed
 ```
