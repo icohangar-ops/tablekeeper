@@ -19,7 +19,8 @@ export default function RootLayout({
               🍽️ Table<span>keeper</span>
             </div>
             <nav>
-              <a href="#invariant">The invariant</a>
+              <a href="/kill-demo">Kill demo</a>
+              <a href="/lookup">My bookings</a>
               <a href="#api">API</a>
               <a href="/api/health">Health</a>
               <a href="/api/audit">Audit log</a>

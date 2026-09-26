@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./db/schema.sql"],
   },
+  // PGlite resolves its WASM + contrib extension bundles (btree_gist) via
+  // import.meta.url against real files on disk. Bundling them breaks the
+  // paths ("Extension bundle not found" / URL-vs-path TypeErrors), so keep
+  // the package external in server bundles.
+  serverExternalPackages: ["@electric-sql/pglite"],
 };
 
 export default nextConfig;

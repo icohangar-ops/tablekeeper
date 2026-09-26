@@ -46,10 +46,23 @@ export default async function Home() {
         commit.
       </div>
 
+      <div className="banner warn" style={{ marginBottom: 18 }}>
+        <b>Watch the invariant fail to fail:</b> the{" "}
+        <a href="/kill-demo">Kill Demo</a> fires up to 50 concurrent bookers
+        at one table — exactly one 201 survives, everyone else gets a clean
+        409 from the database. Book normally at any restaurant below, or
+        manage trips at <a href="/lookup">My bookings</a>.
+      </div>
+
       <h2>Restaurants ({restaurants.length})</h2>
       <div className="grid">
         {restaurants.map((r) => (
-          <div className="card" key={r.id}>
+          <a
+            className="card"
+            key={r.id}
+            href={`/restaurants/${r.slug}`}
+            style={{ color: "inherit", textDecoration: "none", display: "block" }}
+          >
             <h3>{r.name}</h3>
             <p className="meta">
               {r.cuisine} · {r.timezone}
@@ -57,15 +70,8 @@ export default async function Home() {
             <p className="meta">
               {r.table_count} tables · up to {r.max_capacity} seats
             </p>
-            <span className="pill">
-              <a
-                href={`/api/restaurants/${r.id}/availability`}
-                style={{ color: "inherit", textDecoration: "none" }}
-              >
-                availability →
-              </a>
-            </span>
-          </div>
+            <span className="pill">book a table →</span>
+          </a>
         ))}
       </div>
 

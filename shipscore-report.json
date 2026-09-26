@@ -1,0 +1,44 @@
+{
+  "repo": "tablekeeper",
+  "root": "/home/z/my-project/tablekeeper",
+  "scannedAt": "2026-09-26T18:44:03.325Z",
+  "durationMs": 302,
+  "engineVersion": "scanner@0.2.0",
+  "rubricVersion": "1.0.0",
+  "filesScanned": 44,
+  "filesWithTouchpoints": 0,
+  "totalLines": 11440,
+  "astSkipped": 0,
+  "touchpoints": 0,
+  "countsByKind": {},
+  "countsByCategory": {
+    "design": 0,
+    "ship": 0,
+    "run": 0,
+    "secure": 0,
+    "test": 0
+  },
+  "categoryScores": {
+    "design": 100,
+    "ship": 100,
+    "run": 100,
+    "secure": 100,
+    "test": 100
+  },
+  "overallScore": 100,
+  "grade": "A",
+  "notes": [
+    "+5 ship: CI workflows present"
+  ],
+  "version": 1,
+  "overall": 100,
+  "categories": {
+    "design": 100,
+    "ship": 100,
+    "run": 100,
+    "secure": 100,
+    "test": 100
+  },
+  "threshold": 60,
+  "passed": true
+}

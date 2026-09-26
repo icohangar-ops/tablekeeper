@@ -42,7 +42,8 @@ EXCLUDE USING gist (
 | W2 | Availability engine (TZ/slot math, I5) | ✅ done |
 | W3 | Booking core (hold/confirm/cancel, idempotency, 23P01→409) | ✅ done |
 | W4 | Invariant proof T1–T11 | ✅ green locally (PGlite) · CI proof on push |
-| W5–W8 | Frontend, deploy, evidence pack, red-team | ⏳ per plan |
+| W5 | Frontend: venue booking flow, /lookup, /kill-demo (50-racer UI) | ✅ done — lint/tsc/tests/build green |
+| W6–W8 | Deploy, evidence pack, red-team | ⏳ per plan |
 
 ## Quickstart
 
