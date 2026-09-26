@@ -46,7 +46,7 @@ jobs:
         run: |
           PGPASSWORD=tk psql -h localhost -U tk -d tablekeeper_test \
             -c "CREATE EXTENSION IF NOT EXISTS btree_gist;"
-          npx prisma migrate deploy || npx prisma db push
+          npm run db:migrate
 
       - name: Lint
         working-directory: app

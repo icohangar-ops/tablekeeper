@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.tkdata/
+*.db
+.env
+.env.local
+npm-debug.log*

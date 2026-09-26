@@ -312,3 +312,45 @@ Already wired in this scaffold (`.github/workflows/shipscore-gate.yml`):
 | **The verified result** | T1–T11 green in CI incl. 50-way race (1 winner of 50); live kill-demo (two browsers, one 409); ShipScore floor 75 |
 | **The cost** | `<BAND/compute/clock time — track from W1>` |
 | **The limitation** | No auth (guest codes), single-region deploy, no table merging, notifications fake — deliberate MVP cuts, each mapped to a non-goal |
+
+---
+
+## 10. Amendments & status log
+
+**A1 — SQL layer instead of Prisma (2026-09-27, W1).** The data layer is
+hand-rolled SQL behind a small `SqlClient` interface (`app/src/lib/db/`),
+not Prisma. Rationale: the whole product hinges on one exact constraint
+(§2.3) and on a Postgres-exact test engine; an ORM adds indirection over the
+one line that matters and cannot run against PGlite. The §2.2 Prisma draft
+was implemented 1:1 as DDL in `app/db/schema.sql`.
+
+**A2 — PGlite replaces the SQLite fallback (2026-09-27, W1).** §2.3's
+"local dev without Postgres" fallback (SQLite + `BEGIN IMMEDIATE` + overlap
+SELECT) is superseded: we verified PGlite (embedded Postgres 17, WASM) loads
+`btree_gist` from its `contrib/` bundle, so the **exact** `EXCLUDE USING
+gist` constraint, the `23P01` error code, and interactive transactions run
+identically locally and in CI. One dialect, two engines:
+`DATABASE_URL=postgres://…` → node-postgres (CI postgres:16, Neon prod);
+unset → PGlite. The SQLite adapter will never be needed.
+
+**A3 — T3 semantics refined (2026-09-27, W4).** Cancelling a *confirmed*
+reservation is legal product behavior (guest changes their mind), so the
+original T3 wording ("exactly one of the two succeeds") is wrong under our
+state machine. The invariant T3 now asserts: whatever the interleaving of
+confirm/cancel, the final status is a legitimate outcome of the executed
+order (confirm→cancel both succeed → `cancelled`; cancel first → confirm
+bounces `INVALID_TRANSITION`), and no unhandled error ever surfaces.
+
+**Status 2026-09-27 (W1–W4 executed by the band):**
+
+- `app/` Next.js 16 + TypeScript: booking core, availability engine, 9 API
+  routes, minimal landing page, `ensureReady()` boot (migrate + seed-if-empty)
+- Schema with `reservation_no_overlap` EXCLUDE constraint + idempotency +
+  audit tables (`app/db/schema.sql`)
+- Seed: 7 restaurants / 4 time zones incl. DST-zone NY, next 14 days +
+  2026-10-31 / 2026-11-01 (T10 arena), incl. one single-table restaurant
+  (`rst_counter`) as the kill-demo arena
+- **T1–T11 green locally on PGlite (28/28 tests)**; CI (postgres:16) proves
+  true-parallelism on first push
+- CI updated: `npm run db:migrate` (A1) replaces prisma migrate
+- ShipScore gate unchanged (vendored `./tools/shipscore`, ratchet 60→70→75)
