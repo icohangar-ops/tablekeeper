@@ -1,0 +1,63 @@
+name: 'ShipScore'
+description: >-
+  Audit how safely your repo ships AI. Runs the same canonical engine as the
+  web app (scanner@0.2.0 + weighted rubric 1.0.0), scores 0-100 across
+  Design, Ship, Run, Secure, Test, posts the breakdown to your PR, and fails
+  below your threshold.
+author: 'Team Dash'
+
+branding:
+  icon: 'alert-triangle'
+  color: 'yellow'
+
+inputs:
+  threshold:
+    description: 'Fail the job if the overall score is below this value (0-100).'
+    required: false
+    default: '0'
+  categories:
+    description: 'Comma-separated categories to include: design,ship,run,secure,test. Weights renormalize over the subset.'
+    required: false
+    default: 'design,ship,run,secure,test'
+  fix-prs:
+    description: 'Reserved: have the agent open fix PRs for findings (runs server-side; not active in CI yet).'
+    required: false
+    default: 'false'
+  github-token:
+    description: 'Token used to post the score comment on pull requests.'
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  score:
+    description: 'The overall ShipScore (0-100).'
+    value: ${{ steps.scan.outputs.score }}
+  grade:
+    description: 'Letter grade A-F.'
+    value: ${{ steps.scan.outputs.grade }}
+  passed:
+    description: 'Whether the score met the threshold (true/false).'
+    value: ${{ steps.scan.outputs.passed }}
+  report:
+    description: 'Path to the JSON report.'
+    value: ${{ steps.scan.outputs.report }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: scan
+      shell: bash
+      run: |
+        node "${{ github.action_path }}/dist/cli.mjs" \
+          --path "${GITHUB_WORKSPACE:-$PWD}" \
+          --format both \
+          --threshold "${{ inputs.threshold }}" \
+          --categories "${{ inputs.categories }}"
+      env:
+        INPUT_THRESHOLD: ${{ inputs.threshold }}
+        INPUT_CATEGORIES: ${{ inputs.categories }}
+        INPUT_FIX_PRS: ${{ inputs.fix-prs }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_EVENT_PATH: ${{ github.event_path }}

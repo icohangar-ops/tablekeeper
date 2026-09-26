@@ -1,0 +1,37 @@
+name: ShipScore gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: shipscore-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The factory checks its own results: every PR is scored 0-100 across
+      # Design / Ship / Run / Secure / Test by the vendored ShipScore action.
+      # Threshold ratchet policy (see docs/BUILD_PLAN.md §8):
+      #   W1-W4: 60 · W5-W6: 70 · W7+: 75
+      - name: Score this PR
+        id: shipscore
+        uses: ./tools/shipscore
+        with:
+          threshold: 60
+          categories: design,ship,run,secure,test
+
+      - name: Echo verdict
+        run: |
+          echo "score:  ${{ steps.shipscore.outputs.score }}"
+          echo "grade:  ${{ steps.shipscore.outputs.grade }}"
+          echo "passed: ${{ steps.shipscore.outputs.passed }}"
